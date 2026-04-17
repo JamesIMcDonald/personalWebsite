@@ -1,0 +1,27 @@
+FROM python:3.13-slim-bookworm
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DOCKER_PROD=1
+
+WORKDIR /app
+
+# System packages:
+# - chromium + chromium-driver for Selenium
+# - ca-certificates for HTTPS
+# - gcc/libpq-dev only needed if your requirements.txt installs psycopg2 from source
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    chromium-driver \
+    ca-certificates \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["python", "main.py"]
