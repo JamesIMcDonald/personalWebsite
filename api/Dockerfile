@@ -7,6 +7,7 @@ FROM node:22-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN apt-get update -y && apt-get install -y openssl
 RUN npm run build
 
 FROM node:22-slim AS runner
