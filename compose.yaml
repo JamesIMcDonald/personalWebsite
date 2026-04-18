@@ -59,7 +59,7 @@ services:
       context: ./frontend
       args:
         # THIS IS THE PROD API URL
-        NEXT_PUBLIC_API_BASEURL: http://api.localhost
+        NEXT_PUBLIC_API_BASEURL: https://api.j-mcd.com
     container_name: personal-frontend
     restart: unless-stopped
     depends_on:
