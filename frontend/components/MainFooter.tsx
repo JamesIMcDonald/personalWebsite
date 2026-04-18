@@ -11,7 +11,7 @@ export default function Footer() {
                     <Image src="/linkedin-square-icon.webp" alt="LinkedIn" width={18} height={18}/>
                 </a>
                 <a href="https://github.com/JamesIMcDonald" target="_blank" rel="noopener noreferrer" aria-label="James McDonald on GitHub">
-                    <Image src="/GitHub_Invertocat_black.svg" alt="GitHub" width={18} height={18}/>
+                    <Image src="/GitHub_Invertocat_Black.svg" alt="GitHub" width={18} height={18}/>
                 </a>
         </div>
 
