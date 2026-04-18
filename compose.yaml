@@ -1,0 +1,72 @@
+services:
+  db:
+    image: postgres:17
+    container_name: personal-db
+    restart: unless-stopped
+    env_file:
+      - ./db/.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  proxy:
+    image: nginx:alpine
+    container_name: personal-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      # add 443 later when doing local/prod HTTPS
+      # - "443:443"
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - api
+
+  migrate:
+    build:
+      context: ./api
+      target: migrator
+    container_name: personal-migrate
+    env_file:
+      - ./api/.env.migrate
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ./api
+      target: runner
+    container_name: personal-api
+    restart: unless-stopped
+    env_file:
+      - ./api/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    # Remove this port when the proxy is working
+    # ports:
+    #   - "127.0.0.1:4000:4000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # THIS IS THE PROD API URL
+        NEXT_PUBLIC_API_BASEURL: http://api.localhost
+    container_name: personal-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    # Remove this port when the proxy is working
+    # ports:
+    #   - "127.0.0.1:3000:3000"
+
+volumes:
+  pgdata:

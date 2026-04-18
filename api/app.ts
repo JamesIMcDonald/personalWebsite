@@ -20,19 +20,17 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'X-Requested-With'],
 }))
-
 app.use(morgan('tiny'))
 app.use(express.json())
 app.use(cookieParser())
+app.set("trust proxy", 1);
 app.use(globalApiLimiter)
-
 app.get('/health', (_req, res) => {
   res.json({
     ok: true,
     frontendOrigin: process.env.FRONTEND_ORIGIN ?? null,
   })
 })
-
 app.use('/auth', authRouter)
 app.use('/link-checker', linkCheckerRouter)
 app.use('/contact', contactRouter)
