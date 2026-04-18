@@ -59,7 +59,7 @@ router.post('/', requireAuth, async (req, res) => {
                 }
             }
         })
-        res.send(201).json(newLinkCheckerJob)
+        return res.send(201).json(newLinkCheckerJob)
     }
 
 })
@@ -507,7 +507,12 @@ router.get('/:jobId/pages/:pageNum', requireAuth, async (req, res) => {
     take: itemsPerPage,
     })
 
-    return res.json(pages);
+    return res.json(
+        pages.map((page) => ({
+            ...page,
+            id: page.id.toString(),
+        }))
+    );
 });
 
 // Getting the incoming or outgoing links for a given page
