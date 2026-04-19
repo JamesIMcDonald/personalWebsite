@@ -74,3 +74,16 @@ services:
 
 volumes:
   pgdata:
+
+
+# Commands to run on deploy:
+# cd personalWebsite/
+# docker compose build migrate api frontend
+# docker compose up -d db
+# docker compose up -d api frontend proxy
+
+# Sometimes - run the migration image
+# docker compose run --rm migrate
+
+# This is how you restart the key services
+# docker compose up -d --force-recreate api frontend proxy
