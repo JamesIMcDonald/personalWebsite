@@ -5,9 +5,11 @@ from sqlalchemy import text
 from dotenv import load_dotenv
 load_dotenv()
 
+DEV_DB_URL = os.getenv("DEV_DB_URL")
+PROD_DB_URL = os.getenv("PROD_DB_URL")
 
-DOCKER_DB_URL = os.getenv("DOCKER_DB_URL")
-engine = create_engine(DOCKER_DB_URL)
+connectionString = DEV_DB_URL
+engine = create_engine(connectionString)
 
 
 def checkJobsTable(): 

@@ -229,10 +229,8 @@ export default function LinkCheckerPageRow({ index, page }: Props) {
                         variant="outline"
                         size="sm"
                         onClick={handleIncomingToggle}
-                        className="justify-between"
                     >
-                        <span>Incoming</span>
-                        <span>{page._count.incoming_links}</span>
+                        <span>{openPanel === "incoming" ? "Close" : `Incoming ${page._count.incoming_links}`}</span>
                     </Button>
 
                     <Button
@@ -241,8 +239,7 @@ export default function LinkCheckerPageRow({ index, page }: Props) {
                         onClick={handleOutgoingToggle}
                         className="justify-between"
                     >
-                        <span>Outgoing</span>
-                        <span>{page._count.outgoing_links}</span>
+                        <span>{openPanel === "outgoing" ? "Close" : `Outgoing ${page._count.outgoing_links}`}</span>
                     </Button>
                 </div>
             </div>
