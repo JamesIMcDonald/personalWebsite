@@ -43,15 +43,7 @@ function sha256(value: string) {
 }
 
 function setAuthCookies(res: any, accessToken: string, refreshToken: string) {
-    console.log("setting cookies", {
-        NODE_ENV: process.env.NODE_ENV,
-        FRONTEND_ORIGIN,
-        COOKIE_DOMAIN,
-        ACCESS_COOKIE,
-        REFRESH_COOKIE,
-        secure: USE_SECURE_COOKIES,
-    })
-    
+
     res.cookie(ACCESS_COOKIE, accessToken, {
         httpOnly: true,
         secure: USE_SECURE_COOKIES,
