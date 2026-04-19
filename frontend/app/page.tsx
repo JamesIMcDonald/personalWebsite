@@ -52,7 +52,7 @@ export default function HomePage() {
 							<h3>More tools coming soon</h3>
 							<p>I&apos;m building more focused tools for website analysis, automation, and useful data collection.</p>
 						</div>
-						<Button asChild variant="secondary"><Link href="/tools/link-checker">Learn more</Link></Button>
+						<Button asChild variant="secondary"><Link href="/tools">Learn more</Link></Button>
 					</div>
 				</div>
 			</div>
@@ -73,7 +73,7 @@ export default function HomePage() {
 				</div>
 				<div className="flex flex-col p-4 gap-4">
 					<h3>Languages, Tools & Frameworks</h3>
-					<ul className="flex px-4 gap-4 justify-center flex-wrap">
+					<ul className="flex px-4 gap-4 justify-center md:justify-start flex-wrap">
 						<li className="p-2 card min-w-48">
 							<h4 className="font-bold">JavaScript/TypeScript</h4>
 							<ul className="p-4 space-y-2 custom-list">
