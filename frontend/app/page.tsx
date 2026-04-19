@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
 	return (
 		<div className="space-y-16">
-        <section className="mt-16">
+        <section>
 			<div className="max-w-6xl mx-auto flex">
 				<div className="flex flex-col md:flex-1 gap-4 p-4">
 					<div>
@@ -39,15 +39,15 @@ export default function HomePage() {
 		<section>
 			<div className="max-w-6xl mx-auto px-4">
 				<h2>What I&apos;ve built</h2>
-				<div className="flex p-4 gap-4">
-					<div className="card flex-1 flex flex-col gap-2 justify-between">
+				<div className="flex p-4 gap-4 justify-center flex-wrap">
+					<div className="card flex-1 flex flex-col gap-2 justify-between min-w-48">
 						<div>
 							<h3>Link Checker</h3>
 							<p>Start from a URL and map the pages beneath it, then explore the internal links between them.</p>
 						</div>
 						<Button asChild variant="secondary"><Link href="/tools/link-checker">Learn more</Link></Button>
 					</div>
-					<div className="card flex-1 flex flex-col gap-2 justify-between">
+					<div className="card flex-1 flex flex-col gap-2 justify-between min-w-48">
 						<div>
 							<h3>More tools coming soon</h3>
 							<p>I&apos;m building more focused tools for website analysis, automation, and useful data collection.</p>
@@ -73,8 +73,8 @@ export default function HomePage() {
 				</div>
 				<div className="flex flex-col p-4 gap-4">
 					<h3>Languages, Tools & Frameworks</h3>
-					<ul className="flex px-4 gap-4">
-						<li className="p-2 card">
+					<ul className="flex px-4 gap-4 justify-center flex-wrap">
+						<li className="p-2 card min-w-48">
 							<h4 className="font-bold">JavaScript/TypeScript</h4>
 							<ul className="p-4 space-y-2 custom-list">
 								<li>Next</li>
@@ -85,7 +85,7 @@ export default function HomePage() {
 							</ul>
 						</li>
 
-						<li className="p-2 card">
+						<li className="p-2 card min-w-48">
 							<h4 className="font-bold">Python</h4>
 							<ul className="space-y-2 p-4 custom-list">
 								<li>Selenium</li>
@@ -93,7 +93,7 @@ export default function HomePage() {
 							</ul>
 						</li>
 
-						<li className="p-2 card">
+						<li className="p-2 card min-w-48">
 							<h4 className="font-bold">Technologies</h4>
 							<ul className="space-y-2 p-4 custom-list">
 								<li>SQL</li>

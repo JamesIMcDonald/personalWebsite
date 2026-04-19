@@ -35,7 +35,7 @@ export default function LinkCheckerDetail({ job, stats }: Props) {
 
   return (
     <div className="space-y-16">
-      <section className="mt-16">
+      <section>
         <div className="mx-auto max-w-6xl p-4">
           <h1>Link Checker Report</h1>
 

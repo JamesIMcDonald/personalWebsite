@@ -14,7 +14,7 @@ const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 		<body className="flex min-h-screen flex-col justify-center">
 		<AuthProvider>
 			<MainHeader></MainHeader>
-			<main className="flex-1">
+			<main className="flex-1 pt-32">
 				{children}
 			</main>
 			<MainFooter></MainFooter>

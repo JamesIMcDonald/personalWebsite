@@ -41,7 +41,7 @@ export default function MainHeader() {
 	const closeMobileMenu = () => setMobileMenuOpen(false)
 
 	return (
-		<header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur">
+		<header className="fixed top-0 z-50 border-b border-border bg-background/80 backdrop-blur w-full">
 			<div className="mx-auto w-full max-w-6xl px-4">
 				<div className="flex h-16 items-center justify-between gap-4">
 				<Link href="/" className="shrink-0 text-3xl font-bold sm:text-4xl">
@@ -157,7 +157,7 @@ export default function MainHeader() {
 
 					<div className="mt-4 border-t border-border pt-4">
 					{auth.status === "logged-in" ? (
-						<div className="flex flex-col gap-3">
+						<div className="flex flex-col gap-3 justify-center items-center">
 						<span className="truncate px-3 text-sm text-muted-foreground">
 							{welcomeText}
 						</span>
@@ -175,7 +175,7 @@ export default function MainHeader() {
 						</div>
 					) : (
 						<Suspense fallback={<div />}>
-							<div>
+							<div className="flex flex-col items-center">
 							<SignInWithGoogle />
 							</div>
 
