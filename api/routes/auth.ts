@@ -14,8 +14,10 @@ const IS_DEV = process.env.NODE_ENV === "development"
 
 const USE_SECURE_COOKIES = IS_PROD
 
-const ACCESS_COOKIE = USE_SECURE_COOKIES ? "__Host-access" : "access"
-const REFRESH_COOKIE = USE_SECURE_COOKIES ? "__Host-refresh" : "refresh"
+const ACCESS_COOKIE = USE_SECURE_COOKIES ? "__Secure-access" : "access"
+const REFRESH_COOKIE = USE_SECURE_COOKIES ? "__Secure-refresh" : "refresh"
+
+const COOKIE_DOMAIN = IS_PROD ? ".j-mcd.com" : undefined
 
 const ACCESS_TTL_SECONDS = 60 * 10 // 10m
 const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 7 // 7d
@@ -41,37 +43,41 @@ function sha256(value: string) {
 }
 
 function setAuthCookies(res: any, accessToken: string, refreshToken: string) {
-	res.cookie(ACCESS_COOKIE, accessToken, {
-		httpOnly: true,
-		secure: USE_SECURE_COOKIES,
-		sameSite: "lax",
-		path: "/",
-		maxAge: ACCESS_TTL_SECONDS * 1000,
-	});
+    res.cookie(ACCESS_COOKIE, accessToken, {
+        httpOnly: true,
+        secure: USE_SECURE_COOKIES,
+        sameSite: "lax",
+        domain: COOKIE_DOMAIN,
+        path: "/",
+        maxAge: ACCESS_TTL_SECONDS * 1000,
+    })
 
-	res.cookie(REFRESH_COOKIE, refreshToken, {
-		httpOnly: true,
-		secure: USE_SECURE_COOKIES,
-		sameSite: "lax",
-		path: "/",
-		maxAge: REFRESH_TTL_SECONDS * 1000,
-	});
+    res.cookie(REFRESH_COOKIE, refreshToken, {
+        httpOnly: true,
+        secure: USE_SECURE_COOKIES,
+        sameSite: "lax",
+        domain: COOKIE_DOMAIN,
+        path: "/",
+        maxAge: REFRESH_TTL_SECONDS * 1000,
+    })
 }
 
 function clearAuthCookies(res: any) {
-	res.clearCookie(ACCESS_COOKIE, {
-		httpOnly: true,
-		secure: IS_PROD,
-		sameSite: "lax",
-		path: "/",
-	});
+    res.clearCookie(ACCESS_COOKIE, {
+        httpOnly: true,
+        secure: USE_SECURE_COOKIES,
+        sameSite: "lax",
+        domain: COOKIE_DOMAIN,
+        path: "/",
+    })
 
-	res.clearCookie(REFRESH_COOKIE, {
-		httpOnly: true,
-		secure: IS_PROD,
-		sameSite: "lax",
-		path: "/",
-	});
+    res.clearCookie(REFRESH_COOKIE, {
+        httpOnly: true,
+        secure: USE_SECURE_COOKIES,
+        sameSite: "lax",
+        domain: COOKIE_DOMAIN,
+        path: "/",
+    })
 }
 
 function sanitizeReturnTo(value: unknown) {
@@ -92,6 +98,7 @@ router.get("/google", authLimiter, (req, res, next) => {
 		httpOnly: true,
 		secure: USE_SECURE_COOKIES,
 		sameSite: "lax",
+        domain: COOKIE_DOMAIN,
 		path: "/",
 		maxAge: 10 * 60 * 1000,
 	})

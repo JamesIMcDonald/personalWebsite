@@ -8,7 +8,7 @@ load_dotenv()
 DEV_DB_URL = os.getenv("DEV_DB_URL")
 PROD_DB_URL = os.getenv("PROD_DB_URL")
 
-connectionString = DEV_DB_URL
+connectionString = PROD_DB_URL
 engine = create_engine(connectionString)
 
 

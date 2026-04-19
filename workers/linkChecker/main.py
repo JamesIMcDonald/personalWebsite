@@ -1,10 +1,6 @@
-import os
-import time
 from urllib.parse import urlparse, urldefrag
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.webdriver.chrome.options import Options
+import asyncio
+import zendriver as zd
 
 from dbFuncs import (
     checkJobsTable,
@@ -38,8 +34,20 @@ def normalize_url(raw_url):
 
 
 def is_in_scope(base_url, candidate_url):
+    if not base_url or not candidate_url:
+        return False
+
     base = urlparse(base_url)
     candidate = urlparse(candidate_url)
+
+    if base.scheme not in ("http", "https"):
+        return False
+
+    if candidate.scheme not in ("http", "https"):
+        return False
+
+    if not base.netloc or not candidate.netloc:
+        return False
 
     if base.netloc != candidate.netloc:
         return False
@@ -53,42 +61,46 @@ def is_in_scope(base_url, candidate_url):
     return candidate_path == base_path or candidate_path.startswith(base_path + "/")
 
 
-def getLinksFromWebpage(url, headless=True):
+async def getLinksFromWebpage(browser, url):
     linkList = {}
-    chrome_options = Options()
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    if headless:
-        chrome_options.add_argument("--headless=new")
-
-    if os.getenv("DOCKER_PROD") == "1":
-        driver = webdriver.Chrome(
-            service=ChromeService("/usr/bin/chromedriver"),
-            options=chrome_options
-        )
-    else:
-        from webdriver_manager.chrome import ChromeDriverManager
-        driver = webdriver.Chrome(
-            service=ChromeService(ChromeDriverManager().install()),
-            options=chrome_options
-        )
+    page = None
 
     try:
-        driver.set_page_load_timeout(30)
-        driver.get(url)
+        page = await asyncio.wait_for(
+            browser.get(url, new_tab=True),
+            timeout=30,
+        )
 
-        links = driver.find_elements(By.XPATH, "//a[@href]")
-        destinationURL = normalize_url(driver.current_url)
+        try:
+            await page.wait_for_ready_state("complete", timeout=10)
+        except Exception:
+            # Some pages do not cleanly hit complete. Still scrape what we can.
+            pass
 
-        for link in links:
-            href = normalize_url(link.get_attribute("href"))
-            if not href:
-                continue
-            linkList[href] = True
+        destinationURL = normalize_url(
+            await page.evaluate("window.location.href")
+        )
+
+        hrefs = await page.evaluate("""
+            Array.from(
+                document.querySelectorAll("a[href]"),
+                a => a.href
+            )
+        """)
+
+        for href in hrefs or []:
+            href = normalize_url(href)
+            if href:
+                linkList[href] = True
 
         return linkList, destinationURL
+
     finally:
-        driver.quit()
+        if page is not None:
+            try:
+                await page.close()
+            except Exception:
+                pass
 
 # Need to make it so that if it is resuming it grabs all link_checker_links and link_checker_pages
 # we just need the count of links but we need all of the data from pages
@@ -108,7 +120,7 @@ def getResumeJobData(jobId):
     return [pageData, resumedCrawlCount, resumedDiscoverCount, resumedLinkCount]
 
 # possibly add a check to make sure that we only crawl like the frist 100/1000 pages - dont get stuck on a stupidly massive website
-def main(job):
+async def main(job):
     baseUrl = job[4]["baseUrl"].rstrip("/")
     jobId = job[0]
     # print(baseUrl)
@@ -120,6 +132,7 @@ def main(job):
     jobPaused = False
     # print("Here is the job:")
     # print(job)
+    browser = await zd.start(headless=True)
 
     if job[2] == "resuming":
         # print("Oh damn, we are resuming an old job")
@@ -152,7 +165,7 @@ def main(job):
         try:
             # print(f'requesting webpage: {linkToCheck}')
             # linksOnPage.items() = all links from the page - this always goes up
-            linksOnPage, destinationUrl = getLinksFromWebpage(linkToCheck)
+            linksOnPage, destinationUrl = await getLinksFromWebpage(browser, linkToCheck)
 
             # For the very first page we are scraping if we get redirected to/from www. we want to take it in stride
             # e.g. https://exponential-e.com/ -> https://www.exponential-e.com/ OR https://www.plausible.io -> https://plausible.io
@@ -205,7 +218,7 @@ def main(job):
             if destinationUrl != linkToCheck:
                 # print(f"{destinationUrl} != {linkToCheck}")
 
-                if baseUrl in destinationUrl:
+                if destinationUrl and is_in_scope(baseUrl, destinationUrl):
                     if destinationUrl in urlList:
                         # print('We have already checked the page we were redirected to - therefore all links added just update the table entry for page to check and ignore')
                         result = updateLinkCheckerPagesDestinationOnly(destinationUrl, urlList[linkToCheck][1])
@@ -234,7 +247,7 @@ def main(job):
                                 linkCount += 1
                                 continue
                             else:
-                                if baseUrl in url:
+                                if is_in_scope(baseUrl, url):
                                     newEntry = insertIntoLinkCheckerPages(jobId, url)
                                     urlList[url] = (False, newEntry['id'])
                                     insertIntoLinkCheckerLinks(jobId, urlList[destinationUrl][1], urlList[url][1])
@@ -262,7 +275,7 @@ def main(job):
                         linkCount += 1
                         continue
                     else:
-                        if baseUrl in url:
+                        if is_in_scope(baseUrl, url):
                             # print('logic here - do the add to pages, dict and links')
                             newEntry = insertIntoLinkCheckerPages(jobId, url)
                             urlList[url] = (False, newEntry['id'])
@@ -308,6 +321,9 @@ def main(job):
             jobPaused = True
             break
 
+    # Close the browser fully after the job is done
+    await browser.stop()
+    
     # this is after the whole job is done
     if jobPaused:
         return
@@ -322,16 +338,19 @@ def main(job):
 
 # This is the actual execution loop
 
-while True:
-    # print('looking for job')
-    job = checkJobsTable()
-    if job != None:
-        # This claim job is commented out at so we can test quickly - bring this back in once done.
-        # print("here we have found the job:")
-        # print(job)
-        claimJob(job[0])
-        print(f'Found job to check over {job[4]["baseUrl"]}')
-        # Job status can be "pending" or "resuming"
-        main(job)
-        # The job is now done / paused - set it to completed if the status is pending
-    time.sleep(5)
+async def workerLoop():
+    while True:
+        job = checkJobsTable()
+
+        if job is not None:
+            claimJob(job[0])
+            print(f'Found job: {job[4]["baseUrl"]}')
+
+            await main(job)
+            print(f'Finished job: {job[4]["baseUrl"]}')
+
+        await asyncio.sleep(5)
+
+
+if __name__ == "__main__":
+    asyncio.run(workerLoop())
