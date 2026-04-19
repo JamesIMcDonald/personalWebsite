@@ -59,7 +59,7 @@ router.post('/', requireAuth, async (req, res) => {
                 }
             }
         })
-        return res.send(201).json(newLinkCheckerJob)
+        return res.status(201).json(newLinkCheckerJob)
     }
 
 })

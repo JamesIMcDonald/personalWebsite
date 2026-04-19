@@ -43,6 +43,15 @@ function sha256(value: string) {
 }
 
 function setAuthCookies(res: any, accessToken: string, refreshToken: string) {
+    console.log("setting cookies", {
+        NODE_ENV: process.env.NODE_ENV,
+        FRONTEND_ORIGIN,
+        COOKIE_DOMAIN,
+        ACCESS_COOKIE,
+        REFRESH_COOKIE,
+        secure: USE_SECURE_COOKIES,
+    })
+    
     res.cookie(ACCESS_COOKIE, accessToken, {
         httpOnly: true,
         secure: USE_SECURE_COOKIES,
@@ -132,11 +141,13 @@ router.get("/google/callback", passport.authenticate("google", {session: false, 
         setAuthCookies(res, accessToken, refreshToken)
 
         const returnTo = sanitizeReturnTo(req.cookies?.oauth_return_to)
-        res.clearCookie("oauth_return_to", {
-        httpOnly: true,
-        secure: USE_SECURE_COOKIES,
-        sameSite: "lax",
-        path: "/",
+            res.clearCookie("oauth_return_to", {
+            httpOnly: true,
+            secure: USE_SECURE_COOKIES,
+            sameSite: "lax",
+            domain: COOKIE_DOMAIN,
+            path: "/",
+            maxAge: 10 * 60 * 1000,
         })
 
         return res.redirect(302, `${FRONTEND_ORIGIN}${returnTo}`)
