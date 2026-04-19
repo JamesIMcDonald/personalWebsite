@@ -1,5 +1,12 @@
 import Link from "next/link"
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy | James McDonald",
+  description: "Access our Privacy Policy here."
+}
+
 export default function TermsPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-16">
