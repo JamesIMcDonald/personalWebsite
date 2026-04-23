@@ -1,5 +1,5 @@
 import LinkCheckerDetail from "@/components/blocks/linkCheckerDetail"
-import LinkCheckerDetailPages from "@/components/blocks/linkCheckerDetailPages"
+import LinkCheckerDetailPages from "@/components/detailComponents/linkCheckerDetailPages"
 
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"

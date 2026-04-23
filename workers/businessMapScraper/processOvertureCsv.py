@@ -4,6 +4,8 @@
 
 # remove records which are in categories IDGAF about - need to build the list of wanted / unwanted categories
 
+# out of this should pop a list of candidate companies I need to enrich
+
 unwantedBasicCategories = []
 
 wantedBasicCategories = []

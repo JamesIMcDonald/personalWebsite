@@ -1,7 +1,7 @@
 "use client"
 
 import { LinkCheckerJob, LinkCheckerStats } from "@/src/types/link-checker"
-import LinkCheckerDetailData from "./linkCheckerDetailData"
+import LinkCheckerDetailData from "../detailComponents/linkCheckerDetailData"
 import { formatDisplayUrlParts } from "@/src/formatDisplayUrl"
 
 type Props = {

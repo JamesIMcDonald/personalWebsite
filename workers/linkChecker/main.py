@@ -3,8 +3,7 @@ import asyncio
 import zendriver as zd
 
 from dbFuncs import (
-    checkJobsTable,
-    claimJob,
+    checkAndClaimJob,
     updateJobMetadata,
     finishJob,
     insertIntoLinkCheckerLinks,
@@ -60,47 +59,83 @@ def is_in_scope(base_url, candidate_url):
 
     return candidate_path == base_path or candidate_path.startswith(base_path + "/")
 
+def is_probably_file_url(url):
+    if not url:
+        return False
 
-async def getLinksFromWebpage(browser, url):
-    linkList = {}
-    page = None
+    path = urlparse(url).path.lower()
+    file_exts = (
+        ".pdf", ".csv", ".xlsx", ".xls", ".doc", ".docx",
+        ".ppt", ".pptx", ".zip", ".rar", ".png", ".jpg",
+        ".jpeg", ".webp", ".gif", ".svg", ".xml", ".json", ".txt"
+    )
+    return path.endswith(file_exts)
 
-    try:
-        page = await asyncio.wait_for(
-            browser.get(url, new_tab=True),
-            timeout=30,
-        )
+async def getLinksFromWebpage(browser, url, retries=2):
+    last_error = None
 
+    for attempt in range(retries):
+        page = None
         try:
-            await page.wait_for_ready_state("complete", timeout=10)
-        except Exception:
-            # Some pages do not cleanly hit complete. Still scrape what we can.
-            pass
+            page = await asyncio.wait_for(browser.get(url), timeout=30)
+            # page = await asyncio.wait_for(browser.get(url, new_tab=True), timeout=30)
 
-        destinationURL = normalize_url(
-            await page.evaluate("window.location.href")
-        )
-
-        hrefs = await page.evaluate("""
-            Array.from(
-                document.querySelectorAll("a[href]"),
-                a => a.href
-            )
-        """)
-
-        for href in hrefs or []:
-            href = normalize_url(href)
-            if href:
-                linkList[href] = True
-
-        return linkList, destinationURL
-
-    finally:
-        if page is not None:
             try:
-                await page.close()
+                await page.wait_for_ready_state("complete", timeout=10)
             except Exception:
                 pass
+
+            await asyncio.sleep(0.5)
+
+            destinationURL = normalize_url(getattr(page, "url", None))
+
+            hrefs = await page.evaluate("""
+                Array.from(
+                    document.querySelectorAll("a[href]"),
+                    a => a.href
+                )
+            """)
+
+            # print(f"tab url raw: {getattr(page, 'url', None)}")
+            # print(f"destinationUrl: {destinationURL!r}")
+            # print(f"href count: {len(hrefs or [])}")
+            # print(f"first few hrefs: {(hrefs or [])[:10]}")
+            # print(f"readyState: {await page.evaluate('document.readyState')}")
+
+            # If this is an HTML page but the DOM scrape came back empty, retry.
+            # PDFs are allowed to have zero links.
+            if destinationURL is None:
+                raise RuntimeError("Missing destination URL after navigation")
+
+            if hrefs is None and not is_probably_file_url(destinationURL):
+                raise RuntimeError("Anchor extraction returned None")
+
+            linkList = {}
+            for href in hrefs or []:
+                href = normalize_url(href)
+                if href:
+                    linkList[href] = True
+
+            # suspicious empty result on a normal page -> retry once
+            if not linkList and destinationURL.startswith("http") and not is_probably_file_url(destinationURL):
+                if attempt < retries - 1:
+                    continue
+
+            return linkList, destinationURL
+
+        except Exception as e:
+            last_error = e
+            if attempt == retries - 1:
+                raise
+        # only use the below code block if we swap to page = await asyncio.wait_for(browser.get(url, new_tab=True), timeout=30)
+        # finally:
+        #     if page is not None:
+        #         try:
+        #             await page.close()
+        #         except Exception:
+        #             pass
+
+    raise last_error
 
 # Need to make it so that if it is resuming it grabs all link_checker_links and link_checker_pages
 # we just need the count of links but we need all of the data from pages
@@ -121,8 +156,8 @@ def getResumeJobData(jobId):
 
 # possibly add a check to make sure that we only crawl like the frist 100/1000 pages - dont get stuck on a stupidly massive website
 async def main(job):
-    baseUrl = job[4]["baseUrl"].rstrip("/")
-    jobId = job[0]
+    baseUrl = job["data"]["baseUrl"].rstrip("/")
+    jobId = job["id"]
     # print(baseUrl)
     urlList = {}
 
@@ -134,7 +169,7 @@ async def main(job):
     # print(job)
     browser = await zd.start(headless=True)
 
-    if job[2] == "resuming":
+    if job["job_status"] == "resuming":
         # print("Oh damn, we are resuming an old job")
         resumeDataList = getResumeJobData(jobId)
         urlList = resumeDataList[0]
@@ -340,14 +375,14 @@ async def main(job):
 
 async def workerLoop():
     while True:
-        job = checkJobsTable()
+        job = checkAndClaimJob()
 
         if job is not None:
-            claimJob(job[0])
-            print(f'Found job: {job[4]["baseUrl"]}')
+            # print(job)
+            print(f'Found job: {job["data"]["baseUrl"]}')
 
             await main(job)
-            print(f'Finished job: {job[4]["baseUrl"]}')
+            print(f'Finished job: {job["data"]["baseUrl"]}')
 
         await asyncio.sleep(5)
 

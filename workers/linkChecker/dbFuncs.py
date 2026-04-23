@@ -7,24 +7,37 @@ load_dotenv()
 
 DEV_DB_URL = os.getenv("DEV_DB_URL")
 PROD_DB_URL = os.getenv("PROD_DB_URL")
+isProd = os.getenv("IS_PROD") == "True"
 
-connectionString = PROD_DB_URL
+if isProd:
+    connectionString = PROD_DB_URL
+else:
+    connectionString = DEV_DB_URL
+    
 engine = create_engine(connectionString)
 
-
-def checkJobsTable(): 
-    with engine.connect() as conn:
+def checkAndClaimJob():
+    with engine.begin() as conn:
         result = conn.execute(
             text("""
-                SELECT * FROM jobs
-                WHERE job_type = :job_type
-                AND job_status IN (:job_status1, :job_status2)
-                ORDER BY id
-                LIMIT 1
-            """),
-            {"job_type": "link_checker", "job_status1": "pending", "job_status2": "resuming",}
-        )
-        return result.fetchone()
+                WITH job AS (
+                    SELECT id
+                    FROM jobs
+                    WHERE job_type = 'link_checker'
+                    AND job_status in ('pending', 'resuming')
+                    ORDER BY id
+                    LIMIT 1
+                    FOR UPDATE SKIP LOCKED
+                )
+                UPDATE jobs
+                SET job_status = 'working'
+                FROM job
+                WHERE jobs.id = job.id
+                RETURNING jobs.*
+            """)
+        ).mappings().one_or_none()
+        return result
+    
     
 def claimJob(job_id):
     with engine.connect() as conn:

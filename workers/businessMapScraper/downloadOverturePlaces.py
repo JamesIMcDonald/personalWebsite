@@ -39,22 +39,29 @@ def bbox_from_center(lat: float, lon: float, width_m: float):
 
     return west, south, east, north
 
-def downloadOvertureMapsData(lat: float, lon: float, widthM: int, placeName: str):
+def downloadOvertureMapsData(lat: float, lon: float, widthM: int):
+
+    print(f"Downloading maps data for {lat}, {lon} in a {widthM}m box.")
 
     WEST, SOUTH, EAST, NORTH = bbox_from_center(lat, lon, widthM)
 
     con = duckdb.connect()
 
+    # print("INSTALL spatial;")
     con.execute("INSTALL spatial;")
+    # print("INSTALL httpfs;")
     con.execute("INSTALL httpfs;")
+    # print("LOAD spatial;")
     con.execute("LOAD spatial;")
+    # print("LOAD httpfs;")
     con.execute("LOAD httpfs;")
     con.execute("SET s3_region='us-west-2';")
+    # print("Done")
 
     # Current Overture release path from their docs as of Apr 2026.
-    # You can swap this release date later.
+    # Maybe setup a checker which grabs the latest date at some point
     PLACES_PATH = "s3://overturemaps-us-west-2/release/2026-04-15.0/theme=places/type=place/*"
-
+    # print("Running query")
     query = f"""
     SELECT
         id,
@@ -86,12 +93,4 @@ def downloadOvertureMapsData(lat: float, lon: float, widthM: int, placeName: str
 
     print(len(df))
 
-    def sanitiseNumForString(num):
-        string1, string2 = str(num).split('.')
-        return string1 + '_' + string2
-
-    sanitisedBoxString = f"{sanitiseNumForString(WEST)}+{sanitiseNumForString(SOUTH)}+{sanitiseNumForString(EAST)}+{sanitiseNumForString(NORTH)}"
-
-    df.to_csv(f"overture_places_{placeName}_{sanitisedBoxString}.csv", index=False)
-
-downloadOvertureMapsData(51.4952, -0.1439, 1200, 'proper_london_victoria')
+    return df
